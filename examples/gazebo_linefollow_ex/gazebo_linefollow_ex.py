@@ -38,11 +38,14 @@ if __name__ == '__main__':
     qlearn = qlearn.QLearn(actions=range(env.action_space.n),
                            alpha=0.2, gamma=0.8, epsilon=0.9)
 
-    # qlearn.loadQ("QValues_A+")
+    try:
+        qlearn.loadQ("QValues_A+")
+    except FileNotFoundError:
+        print("Bad")
 
     initial_epsilon = qlearn.epsilon
 
-    epsilon_discount = 0.9986#0.9986
+    epsilon_discount = 0.99#0.9986
 
     start_time = time.time()
     total_episodes = 10000
@@ -75,9 +78,6 @@ if __name__ == '__main__':
 
             cumulated_reward += reward
 
-            if highest_reward < cumulated_reward:
-                highest_reward = cumulated_reward
-
             env._flush(force=True)
 
             if not(done):
@@ -90,6 +90,8 @@ if __name__ == '__main__':
 
         if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
+                qlearn.saveQ("QValues_A+")
+                qlearn.loadQ("QValues_A+")
 
         if (x > 0) and (x % 5 == 0):
             qlearn.saveQ("QValues")

@@ -75,21 +75,21 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         # You can use the self.timeout variable to keep track of which frames
         # have no line detected.
 
-    	# Convert the frame to grayscale
+        # Convert the frame to grayscale
         gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
         # Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # Use the Canny edge detector to find edges
-        threshold = 30
-        ratio = 2
+        threshold = 40
+        ratio = 4
         edges = cv2.Canny(blurred, threshold, ratio*threshold)
 
         # Find the size of the image.
         height, width = edges.shape
 
-        max_height = 40
+        max_height = 30
         roi_edges = edges[height-max_height:height, 0:width]
 
         y, x = np.nonzero(roi_edges)
@@ -160,10 +160,16 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
 
         # Set the rewards for your action
         if not done:
-            if action == 0:  # FORWARD
-                reward = 4
+            if (action == 0 and ((state[4] + state[5]) >= 1)):  # FORWARD
+                reward = 12
+            if (action == 1 and ((state[0] + state[1] + state[2]) >= 1)):  # FORWARD
+                reward = 15
+            if (action == 2 and ((state[9] + state[8] + state[7]) >= 1)):  # FORWARD
+                reward = 10
+            elif action == 0: # FORWARD
+                reward = 6
             elif action == 1:  # LEFT
-                reward = 2
+                reward = 3
             else:
                 reward = 2  # RIGHT
         else:

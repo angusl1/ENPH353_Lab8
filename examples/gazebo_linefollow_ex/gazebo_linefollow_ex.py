@@ -27,17 +27,20 @@ def render():
 
 if __name__ == '__main__':
 
+    # Initialize environment
     env = gym.make('Gazebo_linefollow-v0')
-
+    
     outdir = '/tmp/gazebo_gym_experiments'
     env = gym.wrappers.Monitor(env, outdir, force=True)
     plotter = liveplot.LivePlot(outdir)
 
     last_time_steps = numpy.ndarray(0)
 
+    # Initialize QLearn object
     qlearn = qlearn.QLearn(actions=range(env.action_space.n),
                            alpha=0.2, gamma=0.8, epsilon=0.9)
 
+    # Load a previous QLearn object if it exists 
     try:
         qlearn.loadQ("QValues_A+")
     except FileNotFoundError:
@@ -45,7 +48,7 @@ if __name__ == '__main__':
 
     initial_epsilon = qlearn.epsilon
 
-    epsilon_discount = 0.99#0.9986
+    epsilon_discount = 0.99#0.9986 modifies epsilon and affects speed of training
 
     start_time = time.time()
     total_episodes = 10000
@@ -56,9 +59,11 @@ if __name__ == '__main__':
 
         cumulated_reward = 0  # Should going forward give more reward then L/R?
 
+        # Reduces epsilon and random actions
         if qlearn.epsilon > 0.05:
             qlearn.epsilon *= epsilon_discount
 
+        # reset the environment and the robot at the start of each episode
         observation = env.reset()
         state = ','.join(map(str, observation))
 
@@ -74,12 +79,15 @@ if __name__ == '__main__':
             observation, reward, done, info = env.step(action)
             nextState = ','.join(map(str, observation))
 
+            # update the Q values
             qlearn.learn(state, action, reward, nextState)
 
+            # increment the rewards
             cumulated_reward += reward
 
             env._flush(force=True)
 
+            # If state is done, end the episode
             if not(done):
                 state = nextState
             else:
@@ -88,15 +96,18 @@ if __name__ == '__main__':
 
         print("===== Completed episode {}".format(x))
 
+        # Update the Q values if there is a new high score
         if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
                 qlearn.saveQ("QValues_A+")
                 qlearn.loadQ("QValues_A+")
 
+        # Graph the reward and save the current Q Values
         if (x > 0) and (x % 5 == 0):
             qlearn.saveQ("QValues")
             plotter.plot(env)
 
+        # Print the current variables
         m, s = divmod(int(time.time() - start_time), 60)
         h, m = divmod(m, 60)
         print ("Starting EP: " + str(x+1) +

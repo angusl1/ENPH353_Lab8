@@ -48,6 +48,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
 
             @retval (state, done)
         '''
+        # get the camera image
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -55,7 +56,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
 
         # cv2.imshow("raw", cv_image)
 
-        NUM_BINS = 3
+        NUM_BINS = 3 # This seems unused?
         state = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         done = False
 
@@ -82,8 +83,8 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # Use the Canny edge detector to find edges
-        threshold = 40
-        ratio = 4
+        threshold = 100
+        ratio = 2
         edges = cv2.Canny(blurred, threshold, ratio*threshold)
 
         # Find the size of the image.
@@ -95,7 +96,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
         y, x = np.nonzero(roi_edges)
 
         if x.size == 0:
-            self.timeout += 1
+            self.timeout += 1 # count frames where no line is detected
             if self.timeout >= 30:
                 done = True
         else: 
@@ -108,16 +109,19 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
             is_filled = -1 # -1 indicates filled poligon
 
             cv2.circle(cv_image, road_center, circle_radius, color, is_filled)
-
+            
+            # Find the location of the road 
             state[int((centre/width) * 10)] = 1
             self.timeout = 0
 
         return state, done
-
+    
+    # Seed the random function
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
+    # Perform the action given
     def step(self, action):
         rospy.wait_for_service('/gazebo/unpause_physics')
         try:
@@ -129,6 +133,7 @@ class Gazebo_Linefollow_Env(gazebo_env.GazeboEnv):
 
         vel_cmd = Twist()
 
+        # Control robot motion
         if action == 0:  # FORWARD
             vel_cmd.linear.x = 0.4
             vel_cmd.angular.z = 0.0

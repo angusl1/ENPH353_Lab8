@@ -60,14 +60,15 @@ class QLearn:
 
         # THE NEXT LINES NEED TO BE MODIFIED TO MATCH THE REQUIREMENTS ABOVE 
 
+        # Perform a random action if the epsilon is higher than the random output
         if random.random() < self.epsilon:
             action = random.choice(self.actions)
             action = (action, self.getQ(state, action))
         else: 
-            Qs = [(i, self.getQ(state,i)) for i in self.actions]
-            random.shuffle(Qs)
-            Qs.sort(key = lambda q: q[1])
-            action = Qs[-1]
+            Qs = [(i, self.getQ(state,i)) for i in self.actions] # Compute Q value for all actions
+            random.shuffle(Qs) # Shuffle Qs to avoid bias
+            Qs.sort(key = lambda q: q[1]) # Sort Q values in ascending order
+            action = Qs[-1] # Choose action with highest Q value
 
         return action if return_q else action[0]
 
@@ -90,10 +91,12 @@ class QLearn:
 
         # THE NEXT LINES NEED TO BE MODIFIED TO MATCH THE REQUIREMENTS ABOVE
 
-        q1 = self.q.get((state1, action1), None)
+        q1 = self.q.get((state1, action1), None) # Get the Q value based on the state and action
 
         if q1 is None: 
-            self.q[(state1, action1)] = reward
+            self.q[(state1, action1)] = reward # Initialize a Q value if there is none 
         else: 
+            # Get the max Q value for the next state
             max_q2 = max([self.getQ(state2, i) for i in self.actions])
+            # Update the max Q value for the state
             self.q[(state1, action1)] = q1 + self.alpha*(reward + self.gamma*max_q2 - q1)
